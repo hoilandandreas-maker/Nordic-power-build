@@ -155,6 +155,20 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .bnav-item svg{width:22px;height:22px}
 .fade-in{animation:fadeIn 0.3s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* Charts */
+.chart-card{margin:12px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px}
+.chart-sel{width:100%;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:14px;font-family:'Outfit',sans-serif;outline:none;margin-bottom:10px}
+.chart-sel:focus{border-color:var(--accent)}
+.chart-metrics{display:flex;gap:6px;margin-bottom:12px}
+.chart-mbtn{flex:1;padding:8px 4px;border-radius:8px;font-size:11px;font-weight:600;font-family:'Space Mono',monospace;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);cursor:pointer}
+.chart-mbtn.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.chart-empty{margin:12px;padding:28px 16px;text-align:center;color:var(--text-dim);font-size:13px;background:var(--surface);border:1px dashed var(--border);border-radius:16px;line-height:1.5}
+.chart-svg{width:100%;height:auto;display:block}
+.chart-summary{display:flex;gap:8px;margin-top:12px}
+.chart-stat{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center}
+.chart-stat .csv{font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--accent)}
+.chart-stat .csv.neg{color:var(--danger)}
+.chart-stat .csl{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-top:3px}
 </style>
 </head>
 <body>
@@ -162,7 +176,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 <div class="view active" id="vProgram"><div class="week-sel"><button onclick="chgWeek(-1)">&#8249;</button><div class="wk">Uke <span id="wkNum">1</span></div><button onclick="chgWeek(1)">&#8250;</button></div><div class="week-info" id="wkInfo"></div><div id="wkNote"></div><div id="sessBox"></div></div>
 <div class="view" id="vSetup"><div class="setup-hero"><h2>Sett opp programmet</h2><p>Endringer gjelder fra n&aring;v&aelig;rende uke (<span id="curWkLabel">1</span>) og fremover. Tidligere uker beholder sitt program og loggen sin.</p></div><div class="setup-section"><div class="setup-section-title">Dager per uke</div><div class="day-count-row"><button onclick="chgDays(-1)">-</button><div><div class="count" id="dayCount">5</div><div class="count-label">dager</div></div><button onclick="chgDays(1)">+</button></div><div class="setup-hint">Hold inne &#9776; og dra for &aring; endre rekkef&oslash;lge</div></div><div id="setupDays"></div><div class="setup-actions"><button class="btn-secondary" onclick="resetSetup()" style="border:1px solid var(--border)!important">Tilbakestill</button><button class="btn-primary" onclick="applySetup()">Lagre program</button></div></div>
 <div class="view" id="vLog"><div class="week-sel" style="padding-bottom:4px"><button onclick="chgWeek(-1)">&#8249;</button><div class="wk" style="font-size:22px">Uke <span id="logWk">1</span></div><button onclick="chgWeek(1)">&#8250;</button></div><div class="log-tabs" id="logTabs"></div><div id="logBox"></div></div>
-<div class="view" id="vProg"><div class="hero"><h2>12-Uke Syklus</h2><p>Progresjonsplan</p></div><div class="prog-grid" id="progGrid"></div></div>
+<div class="view" id="vProg"><div class="hero"><h2>12-Uke Syklus</h2><p>Progresjonsplan</p></div><div class="prog-grid" id="progGrid"></div><div class="hero" style="padding-top:18px"><h2 style="font-size:24px">Statistikk</h2><p>Logget framgang per &oslash;velse</p></div><div id="chartArea"></div></div>
 <div class="view" id="vSettings"><div class="hero"><h2 id="totalDisp">565</h2><p>Estimert Total (kg)</p></div><div class="stats"><div class="stat sq"><div class="sv" id="sSq">175</div><div class="sl">Squat</div></div><div class="stat bn"><div class="sv" id="sBn">160</div><div class="sl">Bench</div></div><div class="stat dl"><div class="sv" id="sDl">230</div><div class="sl">Deadlift</div></div></div><div class="settings-section"><div class="settings-title">1RM</div><div class="pr-row"><div class="pr-label">Squat</div><div><input type="number" class="pr-input" id="prSq" value="175" onchange="updPR()"><span class="pr-unit">kg</span></div></div><div class="pr-row"><div class="pr-label">Bench</div><div><input type="number" class="pr-input" id="prBn" value="160" onchange="updPR()"><span class="pr-unit">kg</span></div></div><div class="pr-row"><div class="pr-label">Deadlift</div><div><input type="number" class="pr-input" id="prDl" value="230" onchange="updPR()"><span class="pr-unit">kg</span></div></div></div><div class="settings-section"><div class="settings-title">Data</div><button class="data-btn" onclick="expData()">Eksporter</button><button class="data-btn" onclick="document.getElementById('impIn').click()">Importer</button><input type="file" id="impIn" accept=".json" style="display:none" onchange="impData(event)"><button class="data-btn danger" onclick="clearData()">Slett alt</button></div></div>
 <div class="modal-overlay" id="modalOv" onclick="if(event.target===this)closeModal()"><div class="modal" id="modalBody"></div></div>
 <div class="bnav">
@@ -279,11 +293,87 @@ function closeModal(){document.getElementById("modalOv").classList.remove("open"
 
 function renderProgression(){var h='<table class="ptbl"><thead><tr><th>Uke</th><th>Fase</th><th>SxR</th><th>Sq%</th><th>Sq kg</th><th>Bn%</th><th>Bn kg</th><th>DL%</th><th>DL kg</th></tr></thead><tbody>';PR.forEach(function(p,i){var w=i+1,s=SC[i],dl=[4,8,12].includes(w),cu=w===wk;h+='<tr class="'+(cu?"cur":"")+" "+(dl?"deload":"")+'"><td>'+w+'</td><td style="font-size:10px">'+ph(w).substring(0,3)+"</td><td>"+s.s+"x"+s.r+'</td><td class="pct">'+(p.sq*100).toFixed(1)+"%</td><td>"+r25(prs.Squat*p.sq)+'</td><td class="pct">'+(p.bn*100).toFixed(1)+"%</td><td>"+r25(prs.Bench*p.bn)+'</td><td class="pct">'+(p.sq*100).toFixed(1)+"%</td><td>"+r25(prs.Deadlift*p.sq)+"</td></tr>"});document.getElementById("progGrid").innerHTML=h+"</tbody></table>"}
 
+var chartEx=null,chartMetric="e1rm";
+var METRICS=[{k:"e1rm",l:"Est. 1RM"},{k:"top",l:"Topp-sett"},{k:"vol",l:"Volum"}];
+function epley(w,r){return w*(1+r/30)}
+function exerciseHistory(){
+  var byName={};
+  for(var w=1;w<=12;w++){
+    var snap=weeks[w]||sess;
+    snap.forEach(function(se){
+      se.exercises.forEach(function(ex){
+        var name=(ex.name||"").trim();if(!name)return;
+        var e1=0,top=0,vol=0,hit=false;
+        for(var s=0;s<20;s++){
+          var v=ld["w"+w+"_"+se.id+"_"+ex.id+"_s"+s];
+          if(!v||!v.w||!v.r)continue;
+          var wt=parseFloat(v.w),rp=parseInt(v.r,10);
+          if(!(wt>0)||!(rp>0))continue;
+          hit=true;var e=epley(wt,rp);
+          if(e>e1)e1=e;if(wt>top)top=wt;vol+=wt*rp;
+        }
+        if(!hit)return;
+        if(!byName[name])byName[name]={};
+        var cur=byName[name][w];
+        if(!cur)byName[name][w]={week:w,e1rm:e1,top:top,vol:vol};
+        else{cur.e1rm=Math.max(cur.e1rm,e1);cur.top=Math.max(cur.top,top);cur.vol+=vol}
+      });
+    });
+  }
+  var out={};
+  Object.keys(byName).forEach(function(n){
+    out[n]=Object.keys(byName[n]).map(function(k){return byName[n][k]}).sort(function(a,b){return a.week-b.week});
+  });
+  return out;
+}
+function lineChart(series){
+  if(!series.length)return"";
+  var W=320,H=170,pl=34,pr=12,pt=14,pb=24;
+  var vs=series.map(function(p){return p.value});
+  var minV=Math.min.apply(null,vs),maxV=Math.max.apply(null,vs);
+  if(minV===maxV){minV=Math.max(0,minV-1);maxV=maxV+1}
+  var pad=(maxV-minV)*0.12;minV=Math.max(0,minV-pad);maxV=maxV+pad;
+  var rng=maxV-minV||1;
+  function px(wk){return pl+(wk-1)/11*(W-pl-pr)}
+  function py(v){return pt+(1-(v-minV)/rng)*(H-pt-pb)}
+  var g="",i;
+  for(i=0;i<=3;i++){
+    var gv=minV+rng*i/3,gy=py(gv);
+    g+='<line x1="'+pl+'" y1="'+gy.toFixed(1)+'" x2="'+(W-pr)+'" y2="'+gy.toFixed(1)+'" stroke="#2a2a3a" stroke-width="1"/>';
+    g+='<text x="'+(pl-5)+'" y="'+(gy+3).toFixed(1)+'" fill="#7a7a90" font-size="8" text-anchor="end" font-family="monospace">'+Math.round(gv)+'</text>';
+  }
+  var xl="";
+  series.forEach(function(p){xl+='<text x="'+px(p.week).toFixed(1)+'" y="'+(H-8)+'" fill="#7a7a90" font-size="8" text-anchor="middle" font-family="monospace">'+p.week+'</text>'});
+  var d=series.map(function(p,i){return(i?"L":"M")+px(p.week).toFixed(1)+" "+py(p.value).toFixed(1)}).join(" ");
+  var line=series.length>1?'<path d="'+d+'" fill="none" stroke="#c9f06b" stroke-width="2" stroke-linejoin="round"/>':"";
+  var dots=series.map(function(p){return'<circle cx="'+px(p.week).toFixed(1)+'" cy="'+py(p.value).toFixed(1)+'" r="3" fill="#c9f06b"/>'}).join("");
+  return'<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'">'+g+xl+line+dots+'</svg>';
+}
+function chartSummary(series){
+  var vs=series.map(function(p){return p.value});
+  var latest=vs[vs.length-1],best=Math.max.apply(null,vs),delta=latest-vs[0];
+  var sign=delta>=0?"+":"";
+  return'<div class="chart-summary">'+
+    '<div class="chart-stat"><div class="csv">'+Math.round(latest)+'</div><div class="csl">Siste</div></div>'+
+    '<div class="chart-stat"><div class="csv">'+Math.round(best)+'</div><div class="csl">Beste</div></div>'+
+    '<div class="chart-stat"><div class="csv'+(delta<0?" neg":"")+'">'+sign+Math.round(delta)+'</div><div class="csl">Endring</div></div>'+
+  '</div>';
+}
+function renderCharts(){
+  var area=document.getElementById("chartArea");if(!area)return;
+  var hist=exerciseHistory(),names=Object.keys(hist).sort();
+  if(!names.length){area.innerHTML='<div class="chart-empty">Logg noen &oslash;kter i Logg-fanen for &aring; se framgangen din her.</div>';return}
+  if(!chartEx||names.indexOf(chartEx)<0)chartEx=names[0];
+  var sel='<select class="chart-sel" onchange="chartEx=this.value;renderCharts()">'+names.map(function(n){return'<option'+(n===chartEx?" selected":"")+">"+n+"</option>"}).join("")+"</select>";
+  var tog='<div class="chart-metrics">'+METRICS.map(function(m){return'<button class="chart-mbtn'+(m.k===chartMetric?" active":"")+'" onclick="chartMetric=\''+m.k+'\';renderCharts()">'+m.l+"</button>"}).join("")+"</div>";
+  var series=hist[chartEx].map(function(p){return{week:p.week,value:p[chartMetric]}});
+  area.innerHTML='<div class="chart-card fade-in">'+sel+tog+lineChart(series)+chartSummary(series)+"</div>";
+}
 function chgWeek(d){wk=Math.max(1,Math.min(12,wk+d));var lbl=document.getElementById("curWkLabel");if(lbl)lbl.textContent=wk;sv();renderProg();renderLog();renderProgression()}
 function updPR(){prs.Squat=+(document.getElementById("prSq").value)||100;prs.Bench=+(document.getElementById("prBn").value)||100;prs.Deadlift=+(document.getElementById("prDl").value)||100;sv();document.getElementById("sSq").textContent=prs.Squat;document.getElementById("sBn").textContent=prs.Bench;document.getElementById("sDl").textContent=prs.Deadlift;document.getElementById("totalDisp").textContent=prs.Squat+prs.Bench+prs.Deadlift;renderProg();renderLog();renderProgression()}
 function slg(k,f,v){if(!ld[k])ld[k]={};if(f==="w"&&typeof v==="string")v=v.replace(",",".");ld[k][f]=v;sv()}
 function tgl(k,el){if(!ld[k])ld[k]={};var newDone=!ld[k].done;ld[k].done=newDone;el.classList.toggle("done");if(newDone){var meta=el.getAttribute("data-pw"),mr=el.getAttribute("data-pr");if(!ld[k].w&&meta){ld[k].w=meta;var wIn=document.querySelector('input[data-key="'+k+'"][data-fld="w"]');if(wIn)wIn.value=meta}if(!ld[k].r&&mr){ld[k].r=mr;var rIn=document.querySelector('input[data-key="'+k+'"][data-fld="r"]');if(rIn)rIn.value=mr}}sv()}
-function switchV(id,el){document.querySelectorAll(".view").forEach(function(v){v.classList.remove("active")});document.getElementById(id).classList.add("active");document.querySelectorAll(".bnav-item").forEach(function(n){n.classList.remove("active")});el.classList.add("active");if(id==="vLog")renderLog();if(id==="vProg")renderProgression()}
+function switchV(id,el){document.querySelectorAll(".view").forEach(function(v){v.classList.remove("active")});document.getElementById(id).classList.add("active");document.querySelectorAll(".bnav-item").forEach(function(n){n.classList.remove("active")});el.classList.add("active");if(id==="vLog")renderLog();if(id==="vProg"){renderProgression();renderCharts()}}
 function expData(){var d={version:"npb_v3",exported:new Date().toISOString(),prs:prs,week:wk,sessions:sess,weeks:weeks,log:ld},b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="npb_"+new Date().toISOString().slice(0,10)+".json";a.click()}
 function impData(ev){var f=ev.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){try{var d=JSON.parse(e.target.result);prs=d.prs||prs;wk=d.week||1;sess=d.sessions||sess;migrate(sess);weeks=d.weeks||{};Object.keys(weeks).forEach(function(k){migrate(weeks[k])});ld=d.log||{};sv();document.getElementById("prSq").value=prs.Squat;document.getElementById("prBn").value=prs.Bench;document.getElementById("prDl").value=prs.Deadlift;updPR();renderProg();alert("Importert!")}catch(err){alert("Feil: "+err.message)}};r.readAsText(f);ev.target.value=""}
 function clearData(){if(confirm("Slett ALL data?")){localStorage.removeItem("npb_wk");localStorage.removeItem("npb_prs");localStorage.removeItem("npb_sess");localStorage.removeItem("npb_log");localStorage.removeItem("npb_weeks");location.reload()}}
