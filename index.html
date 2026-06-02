@@ -471,6 +471,13 @@ var METRICS=[{k:"e1rm",l:"Est. 1RM"},{k:"top",l:"Topp-sett"},{k:"vol",l:"Volum"}
 function epley(w,r){return w*(1+r/30)}
 function exerciseHistory(){
   var byName={};
+  function add(name,w,e1,top,vol){
+    if(!byName[name])byName[name]={};
+    var cur=byName[name][w];
+    if(!cur)byName[name][w]={week:w,e1rm:e1,top:top,vol:vol};
+    else{cur.e1rm=Math.max(cur.e1rm,e1);cur.top=Math.max(cur.top,top);cur.vol+=vol}
+  }
+  // Legacy logs keyed w{wk}_{sessId}_{exId}_s{n}
   for(var w=1;w<=wkCount();w++){
     var snap=weeks[w]||sess;
     snap.forEach(function(se){
@@ -485,14 +492,25 @@ function exerciseHistory(){
           hit=true;var e=epley(wt,rp);
           if(e>e1)e1=e;if(wt>top)top=wt;vol+=wt*rp;
         }
-        if(!hit)return;
-        if(!byName[name])byName[name]={};
-        var cur=byName[name][w];
-        if(!cur)byName[name][w]={week:w,e1rm:e1,top:top,vol:vol};
-        else{cur.e1rm=Math.max(cur.e1rm,e1);cur.top=Math.max(cur.top,top);cur.vol+=vol}
+        if(hit)add(name,w,e1,top,vol);
       });
     });
   }
+  // Date-based workouts: contribute to their tagged cycle week
+  workouts.forEach(function(wo){
+    if(wo.week==null)return;
+    wo.exercises.forEach(function(ex){
+      var name=(ex.name||"").trim();if(!name)return;
+      var e1=0,top=0,vol=0,hit=false;
+      ex.sets.forEach(function(st){
+        var wt=parseFloat(st.w),rp=parseInt(st.r,10);
+        if(!(wt>0)||!(rp>0))return;
+        hit=true;var e=epley(wt,rp);
+        if(e>e1)e1=e;if(wt>top)top=wt;vol+=wt*rp;
+      });
+      if(hit)add(name,wo.week,e1,top,vol);
+    });
+  });
   var out={};
   Object.keys(byName).forEach(function(n){
     out[n]=Object.keys(byName[n]).map(function(k){return byName[n][k]}).sort(function(a,b){return a.week-b.week});
