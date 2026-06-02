@@ -143,30 +143,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .cwk-ctrl b{color:var(--accent);font-size:15px;min-width:24px;text-align:center}
 .scheme-sel{width:100%;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:14px;font-family:'Outfit',sans-serif;outline:none}
 .scheme-sel:focus{border-color:var(--accent)}
-/* AI Coach */
-.coach-fab{position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom));width:54px;height:54px;border-radius:50%;background:var(--accent);color:var(--bg);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(0,0,0,0.5);z-index:90;cursor:pointer}
-.coach-fab svg{width:26px;height:26px}
-.coach-fab:active{transform:scale(0.92)}
-.coach-overlay{display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px)}
-.coach-overlay.open{display:flex;align-items:flex-end;justify-content:center}
-.coach-panel{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:500px;height:88dvh;display:flex;flex-direction:column;animation:slideUp 0.3s ease;overflow:hidden}
-.coach-head{display:flex;align-items:center;justify-content:space-between;padding:16px;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--accent)}
-.coach-head button{background:none;border:none;color:var(--text-dim);font-size:24px;cursor:pointer}
-.coach-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
-.cmsg{max-width:85%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
-.cmsg.user{align-self:flex-end;background:var(--accent);color:var(--bg);border-bottom-right-radius:4px}
-.cmsg.bot{align-self:flex-start;background:var(--surface2);border:1px solid var(--border);border-bottom-left-radius:4px}
-.cmsg.sys{align-self:center;color:var(--text-dim);font-size:12px;font-family:'Space Mono',monospace;text-align:center;max-width:95%}
-.coach-action{align-self:flex-start;max-width:92%;background:rgba(201,240,107,0.08);border:1px solid rgba(201,240,107,0.3);border-radius:12px;padding:12px}
-.coach-action .ca-t{font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px}
-.coach-action .ca-d{font-size:13px;color:var(--text);margin-bottom:10px;line-height:1.4}
-.coach-action button{padding:8px 16px;border-radius:9px;border:none;font-size:12px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;background:var(--accent);color:var(--bg)}
-.ca-done{font-size:12px;color:var(--accent);font-family:'Space Mono',monospace}
-.coach-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--border);padding-bottom:calc(12px + env(safe-area-inset-bottom))}
-.coach-input-row input{flex:1;padding:11px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:14px;font-family:'Outfit',sans-serif;outline:none}
-.coach-input-row input:focus{border-color:var(--accent)}
-.coach-input-row button{padding:11px 18px;border-radius:12px;border:none;background:var(--accent);color:var(--bg);font-weight:700;font-size:14px;cursor:pointer;font-family:'Outfit',sans-serif}
-.coach-input-row button:disabled{opacity:0.5}
 .log-tabs{display:flex;gap:6px;padding:12px;overflow-x:auto;scrollbar-width:none}
 .log-tabs::-webkit-scrollbar{display:none}
 .log-tab{padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;background:var(--surface);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;white-space:nowrap}
@@ -213,8 +189,6 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 <div class="view" id="vProg"><div class="hero"><h2 id="cycTitle">12-Uke Syklus</h2><p>Progresjonsplan</p></div><div class="prog-grid" id="progGrid"></div><div class="hero" style="padding-top:18px"><h2 style="font-size:24px">Statistikk</h2><p>Logget framgang per &oslash;velse</p></div><div id="chartArea"></div></div>
 <div class="view" id="vSettings"><div class="hero"><h2 id="totalDisp">565</h2><p>Estimert Total (kg)</p></div><div class="stats"><div class="stat sq"><div class="sv" id="sSq">175</div><div class="sl">Squat</div></div><div class="stat bn"><div class="sv" id="sBn">160</div><div class="sl">Bench</div></div><div class="stat dl"><div class="sv" id="sDl">230</div><div class="sl">Deadlift</div></div></div><div class="settings-section"><div class="settings-title">Profil</div><select id="profileSel" class="scheme-sel" onchange="switchProfile(this.value)"></select><div style="display:flex;gap:8px;margin-top:10px"><button class="data-btn" style="flex:1;justify-content:center" onclick="addProfile()">+ Ny</button><button class="data-btn" style="flex:1;justify-content:center" onclick="renameProfile()">Endre navn</button><button class="data-btn danger" style="flex:1;justify-content:center" onclick="delProfile()">Slett</button></div><div class="setup-hint" style="margin-top:8px">Hver profil har egen logg, eget program og egen progresjon p&aring; denne enheten.</div></div><div class="settings-section"><div class="settings-title">1RM</div><div class="pr-row"><div class="pr-label">Squat</div><div><input type="number" class="pr-input" id="prSq" value="175" onchange="updPR()"><span class="pr-unit">kg</span></div></div><div class="pr-row"><div class="pr-label">Bench</div><div><input type="number" class="pr-input" id="prBn" value="160" onchange="updPR()"><span class="pr-unit">kg</span></div></div><div class="pr-row"><div class="pr-label">Deadlift</div><div><input type="number" class="pr-input" id="prDl" value="230" onchange="updPR()"><span class="pr-unit">kg</span></div></div></div><div class="settings-section"><div class="settings-title">Progresjonsmodell</div><select id="schemeSel" class="scheme-sel" onchange="setScheme(this.value)"></select><div class="setup-hint" style="margin-top:10px">Velg «Egendefinert» for &aring; redigere prosenter, sett/reps og antall uker selv i Progresjon-fanen.</div></div><div class="settings-section"><div class="settings-title">Data</div><button class="data-btn" onclick="expData()">Eksporter</button><button class="data-btn" onclick="document.getElementById('impIn').click()">Importer</button><input type="file" id="impIn" accept=".json" style="display:none" onchange="impData(event)"><button class="data-btn danger" onclick="clearData()">Slett alt</button></div></div>
 <div class="modal-overlay" id="modalOv" onclick="if(event.target===this)closeModal()"><div class="modal" id="modalBody"></div></div>
-<div class="coach-fab" id="coachFab" onclick="openCoach()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/></svg></div>
-<div class="coach-overlay" id="coachOv" onclick="if(event.target===this)closeCoach()"><div class="coach-panel"><div class="coach-head"><span>AI Treningscoach</span><button onclick="closeCoach()">&times;</button></div><div class="coach-msgs" id="coachMsgs"></div><div class="coach-input-row"><input id="coachInput" placeholder="Spør coachen..." onkeydown="if(event.key==='Enter')sendCoach()"><button id="coachSend" onclick="sendCoach()">Send</button></div></div></div>
 <div class="bnav">
 <div class="bnav-item active" onclick="switchV('vProgram',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Program</div>
 <div class="bnav-item" onclick="switchV('vSetup',this);renderSetup()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>Setup</div>
@@ -382,49 +356,7 @@ if(wk>customWeeks.length)wk=customWeeks.length;
 saveCustom();sv();renderProg();renderLog();renderProgression();renderCharts()}
 function setScheme(id){if(!SCHEMES[id])return;schemeId=id;if(wk>wkCount())wk=wkCount();sv();renderProg();renderLog();renderProgression();renderCharts()}
 function fillSchemeSel(){var s=document.getElementById("schemeSel");if(!s)return;s.innerHTML=Object.keys(SCHEMES).map(function(k){return'<option value="'+k+'"'+(k===schemeId?" selected":"")+">"+SCHEMES[k].name+"</option>"}).join("")}
-var COACH_URL="/.netlify/functions/coach";
-var coachConvo=[],coachView=[],coachBusy=false;
-function escapeHtml(s){return String(s).replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
-function openCoach(){document.getElementById("coachOv").classList.add("open");renderCoach();setTimeout(function(){var i=document.getElementById("coachInput");if(i)i.focus()},120)}
-function closeCoach(){document.getElementById("coachOv").classList.remove("open")}
-function renderCoach(){var b=document.getElementById("coachMsgs");if(!b)return;var h="";
-if(!coachView.length)h+='<div class="cmsg sys">Hei! Jeg er AI-treningscoachen din. Spør om programmet, progresjonen eller framgangen din – jeg kan ogs&aring; foresl&aring; endringer.</div>';
-coachView.forEach(function(m,i){
-if(m.type==="action"){h+='<div class="coach-action"><div class="ca-t">Forslag fra coach</div><div class="ca-d">'+escapeHtml(m.label)+'</div>'+(m.applied?'<span class="ca-done">✓ Brukt</span>':'<button onclick="applyCoachAction('+i+')">Bruk forslaget</button>')+'</div>';}
-else{h+='<div class="cmsg '+(m.role==="user"?"user":m.role==="bot"?"bot":"sys")+'">'+escapeHtml(m.content)+'</div>';}});
-if(coachBusy)h+='<div class="cmsg sys">Coachen tenker…</div>';
-b.innerHTML=h;b.scrollTop=b.scrollHeight;}
-function coachContext(){var snap=weeks[wk]||sess;
-return{week:wk,weekCount:wkCount(),scheme:SCHEMES[schemeId].name,prs:prs,
-program:snap.map(function(d){return{name:d.name,type:d.type,exercises:d.exercises.map(function(e){var st=e.sets,rp=e.reps;if(e.mainLift){var p=mrx(wk,e.mainLift,e.secondaryDay);st=p.sets;rp=p.reps}return{name:e.name,sets:st,reps:rp,mainLift:e.mainLift||null}})}}),
-history:exerciseHistory()};}
-function actionLabel(a){
-if(a.name==="update_one_rep_max"){var p=[];if(a.input.squat)p.push("knebøy "+a.input.squat);if(a.input.bench)p.push("benk "+a.input.bench);if(a.input.deadlift)p.push("mark "+a.input.deadlift);return"Oppdater 1RM: "+p.join(", ")+" kg";}
-if(a.name==="recommend_scheme")return"Bytt progresjonsmodell til «"+(SCHEMES[a.input.scheme]?SCHEMES[a.input.scheme].name:a.input.scheme)+"»"+(a.input.reason?" – "+a.input.reason:"");
-if(a.name==="set_program")return"Nytt program med "+((a.input.days||[]).length)+" dager (gjelder fra uke "+wk+")";
-return a.name;}
-function sendCoach(){var inp=document.getElementById("coachInput");var txt=(inp.value||"").trim();if(!txt||coachBusy)return;
-inp.value="";coachConvo.push({role:"user",content:txt});coachView.push({type:"msg",role:"user",content:txt});
-coachBusy=true;document.getElementById("coachSend").disabled=true;renderCoach();
-fetch(COACH_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:coachConvo,context:coachContext()})})
-.then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d}})})
-.then(function(res){coachBusy=false;document.getElementById("coachSend").disabled=false;
-if(!res.ok){coachView.push({type:"msg",role:"sys",content:(res.d&&res.d.error)||"Noe gikk galt."});renderCoach();return}
-var d=res.d;coachConvo.push({role:"assistant",content:d.reply});coachView.push({type:"msg",role:"bot",content:d.reply});
-(d.actions||[]).forEach(function(a){coachView.push({type:"action",action:a,applied:false,label:actionLabel(a)})});renderCoach();})
-.catch(function(e){coachBusy=false;document.getElementById("coachSend").disabled=false;
-coachView.push({type:"msg",role:"sys",content:"Får ikke kontakt med AI-coachen. Funksjonen virker når appen er publisert på Netlify med en ANTHROPIC_API_KEY satt."});renderCoach();});}
-function applyCoachProgram(days){if(!Array.isArray(days)||!days.length)return;
-sess=days.map(function(d,i){return{id:uid(),day:i+1,name:d.name||"Dag "+(i+1),type:TY.indexOf(d.type)>-1?d.type:"custom",
-exercises:(d.exercises||[]).filter(function(e){return e&&e.name}).map(function(e){var ml=(e.mainLift==="Squat"||e.mainLift==="Bench"||e.mainLift==="Deadlift")?e.mainLift:null;
-return{id:uid(),name:e.name,sets:""+(e.sets||"3"),reps:""+(e.reps||"8-12"),mainLift:ml,secondaryDay:!!e.secondaryDay,workingWeight:""}})}});
-propagateFromCurrent();sd=null;sv();renderProg();renderLog();}
-function applyCoachAction(idx){var item=coachView[idx];if(!item||item.type!=="action"||item.applied)return;var a=item.action;
-if(a.name==="update_one_rep_max"){if(a.input.squat)prs.Squat=+a.input.squat;if(a.input.bench)prs.Bench=+a.input.bench;if(a.input.deadlift)prs.Deadlift=+a.input.deadlift;
-document.getElementById("prSq").value=prs.Squat;document.getElementById("prBn").value=prs.Bench;document.getElementById("prDl").value=prs.Deadlift;updPR();}
-else if(a.name==="recommend_scheme"){if(SCHEMES[a.input.scheme])setScheme(a.input.scheme);}
-else if(a.name==="set_program"){applyCoachProgram(a.input.days);}
-item.applied=true;renderCoach();}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 
 var chartEx=null,chartMetric="e1rm";
 var METRICS=[{k:"e1rm",l:"Est. 1RM"},{k:"top",l:"Topp-sett"},{k:"vol",l:"Volum"}];
