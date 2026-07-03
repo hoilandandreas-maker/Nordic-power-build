@@ -527,7 +527,10 @@ function lineChart(series){
   if(minV===maxV){minV=Math.max(0,minV-1);maxV=maxV+1}
   var pad=(maxV-minV)*0.12;minV=Math.max(0,minV-pad);maxV=maxV+pad;
   var rng=maxV-minV||1;
-  function px(wk){return pl+(wk-1)/11*(W-pl-pr)}
+  var maxWeek=series.reduce(function(m,p){return Math.max(m,p.week||1)},1);
+  var axisWeeks=Math.max(wkCount(),maxWeek,1);
+  var weekDenom=Math.max(1,axisWeeks-1);
+  function px(wk){return pl+(wk-1)/weekDenom*(W-pl-pr)}
   function py(v){return pt+(1-(v-minV)/rng)*(H-pt-pb)}
   var g="",i;
   for(i=0;i<=3;i++){
