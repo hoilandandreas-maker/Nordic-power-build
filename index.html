@@ -374,8 +374,56 @@ function setLogFilter(v){logFilter=(v==="all"||v==="none")?v:+v;renderLog()}
 function openWo(id){curWo=id;renderLog()}
 function backToList(){curWo=null;renderLog()}
 function newWorkout(){
-  var rows=sess.map(function(s){return '<div class="tpl-pick" onclick="createFromTemplate(\''+s.id+'\')"><div class="tpl-name">'+escapeHtml(s.name||"Uten navn")+'</div><div class="tpl-meta">'+s.exercises.length+' øvelser</div></div>'}).join("");
-  document.getElementById("modalBody").innerHTML='<div class="modal-title">Logg ny økt<button class="modal-close" onclick="closeModal()">&times;</button></div><div class="setup-hint" style="text-align:left;margin-bottom:10px">Velg et oppsett fra Setup eller start tom &oslash;kt. &Oslash;kten dateres i dag.</div><div class="tpl-list">'+rows+'<div class="tpl-pick tpl-empty" onclick="createEmptyWorkout()"><div class="tpl-name">Tom økt</div><div class="tpl-meta">Legg til øvelser selv (med autocomplete)</div></div></div>';
+  var modalBody=document.getElementById("modalBody");
+  modalBody.textContent="";
+
+  var title=document.createElement("div");
+  title.className="modal-title";
+  title.appendChild(document.createTextNode("Logg ny økt"));
+  var closeBtn=document.createElement("button");
+  closeBtn.className="modal-close";
+  closeBtn.type="button";
+  closeBtn.innerHTML="&times;";
+  closeBtn.addEventListener("click",closeModal);
+  title.appendChild(closeBtn);
+  modalBody.appendChild(title);
+
+  var hint=document.createElement("div");
+  hint.className="setup-hint";
+  hint.style.textAlign="left";
+  hint.style.marginBottom="10px";
+  hint.textContent="Velg et oppsett fra Setup eller start tom økt. Økten dateres i dag.";
+  modalBody.appendChild(hint);
+
+  var list=document.createElement("div");
+  list.className="tpl-list";
+  sess.forEach(function(s){
+    var row=document.createElement("div");
+    row.className="tpl-pick";
+    row.addEventListener("click",function(){createFromTemplate(s.id)});
+    var name=document.createElement("div");
+    name.className="tpl-name";
+    name.textContent=s.name||"Uten navn";
+    row.appendChild(name);
+    var meta=document.createElement("div");
+    meta.className="tpl-meta";
+    meta.textContent=(s.exercises?s.exercises.length:0)+" øvelser";
+    row.appendChild(meta);
+    list.appendChild(row);
+  });
+  var empty=document.createElement("div");
+  empty.className="tpl-pick tpl-empty";
+  empty.addEventListener("click",createEmptyWorkout);
+  var emptyName=document.createElement("div");
+  emptyName.className="tpl-name";
+  emptyName.textContent="Tom økt";
+  empty.appendChild(emptyName);
+  var emptyMeta=document.createElement("div");
+  emptyMeta.className="tpl-meta";
+  emptyMeta.textContent="Legg til øvelser selv (med autocomplete)";
+  empty.appendChild(emptyMeta);
+  list.appendChild(empty);
+  modalBody.appendChild(list);
   document.getElementById("modalOv").classList.add("open");
 }
 function createFromTemplate(id){
