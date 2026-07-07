@@ -721,15 +721,29 @@ function chartSummary(series){
     '<div class="chart-stat"><div class="csv'+(delta<0?" neg":"")+'">'+sign+Math.round(delta)+'</div><div class="csl">Endring</div></div>'+
   '</div>';
 }
+function chartHistList(name){
+  var h=exHistory(name,null);
+  if(!h.length)return'<div class="chart-empty" style="margin-top:0">Ingen daterte &oslash;kter med denne &oslash;velsen enda.</div>';
+  var rows=h.map(function(x){
+    var tag=x.week!=null?'<span class="wo-tag">Uke '+x.week+'</span>':"";
+    return'<div class="hist-item"><div class="hist-row"><div class="hist-date">'+escapeHtml(x.date)+'</div>'+tag+'</div><div class="hist-sets">'+escapeHtml(fmtSets(x.sets))+'</div></div>';
+  }).join("");
+  return'<div class="chart-card fade-in" style="margin-top:0"><div class="settings-title" style="margin-bottom:2px">&Oslash;kt-historikk</div>'+rows+'</div>';
+}
 function renderCharts(){
   var area=document.getElementById("chartArea");if(!area)return;
-  var hist=exerciseHistory(),names=Object.keys(hist).sort();
+  var hist=exerciseHistory();
+  var seen={},names=[];
+  Object.keys(hist).forEach(function(n){var k=n.toLowerCase();if(!seen[k]){seen[k]=true;names.push(n)}});
+  workouts.forEach(function(wo){wo.exercises.forEach(function(e){var n=(e.name||"").trim();if(!n||!filledSets(e).length)return;var k=n.toLowerCase();if(!seen[k]){seen[k]=true;names.push(n)}})});
+  names.sort();
   if(!names.length){area.innerHTML='<div class="chart-empty">Logg noen &oslash;kter i Logg-fanen for &aring; se framgangen din her.</div>';return}
   if(!chartEx||names.indexOf(chartEx)<0)chartEx=names[0];
   var sel='<select class="chart-sel" onchange="chartEx=this.value;renderCharts()">'+names.map(function(n){return'<option value="'+escapeHtml(n)+'"'+(n===chartEx?" selected":"")+">"+escapeHtml(n)+"</option>"}).join("")+"</select>";
   var tog='<div class="chart-metrics">'+METRICS.map(function(m){return'<button class="chart-mbtn'+(m.k===chartMetric?" active":"")+'" onclick="chartMetric=\''+m.k+'\';renderCharts()">'+m.l+"</button>"}).join("")+"</div>";
-  var series=hist[chartEx].map(function(p){return{week:p.week,value:p[chartMetric]}});
-  area.innerHTML='<div class="chart-card fade-in">'+sel+tog+lineChart(series)+chartSummary(series)+"</div>";
+  var series=(hist[chartEx]||[]).map(function(p){return{week:p.week,value:p[chartMetric]}});
+  var chart=series.length?lineChart(series)+chartSummary(series):'<div class="setup-hint" style="padding:8px 0">Grafen viser kun &oslash;kter som er tagget med uke.</div>';
+  area.innerHTML='<div class="chart-card fade-in">'+sel+tog+chart+"</div>"+chartHistList(chartEx);
 }
 function chgWeek(d){wk=Math.max(1,Math.min(wkCount(),wk+d));var lbl=document.getElementById("curWkLabel");if(lbl)lbl.textContent=wk;sv();renderProg();renderLog();renderProgression();renderCharts()}
 function updPR(){prs.Squat=+(document.getElementById("prSq").value)||100;prs.Bench=+(document.getElementById("prBn").value)||100;prs.Deadlift=+(document.getElementById("prDl").value)||100;sv();document.getElementById("sSq").textContent=prs.Squat;document.getElementById("sBn").textContent=prs.Bench;document.getElementById("sDl").textContent=prs.Deadlift;document.getElementById("totalDisp").textContent=prs.Squat+prs.Bench+prs.Deadlift;renderProg();renderLog();renderProgression()}
