@@ -148,7 +148,11 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .log-tab{padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;background:var(--surface);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;white-space:nowrap}
 .log-tab.active{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 .log-ex{margin:8px 12px;background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden}
-.log-ex-head{padding:14px 16px;font-weight:600;font-size:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.log-ex-head{padding:14px 12px 14px 16px;font-weight:600;font-size:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.log-ex-name{flex:1;min-width:0;background:transparent;border:1px solid transparent;color:var(--text);font-weight:600;font-size:14px;font-family:'Outfit',sans-serif;padding:6px 8px;margin:-6px 0 -6px -8px;border-radius:8px;outline:none}
+.log-ex-name:focus{background:var(--surface2);border-color:var(--accent)}
+.wo-finish{width:100%;padding:14px;border-radius:14px;border:none;background:var(--accent);color:var(--bg);font-size:15px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif}
+.wo-finish:active{transform:scale(0.98);opacity:0.9}
 .log-edit{margin-left:auto;width:30px;height:30px;border-radius:8px;border:none;background:transparent;color:var(--text-dim);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .log-edit:active{background:var(--surface2);color:var(--accent)}
 .log-set{display:grid;grid-template-columns:40px 1fr 1fr 44px 32px;gap:8px;padding:8px 16px;align-items:center;border-bottom:1px solid rgba(42,42,58,0.3)}
@@ -527,6 +531,8 @@ function woDelSet(ei,si){var w=findWo();if(!w)return;var ex=w.exercises[ei];if(!
 function woDelEx(ei){var w=findWo();if(!w)return;if(!confirm("Fjern «"+w.exercises[ei].name+"» fra økta?"))return;w.exercises.splice(ei,1);sv();renderLog()}
 function woAddEx(name){name=(name||"").trim();if(!name)return;var w=findWo();if(!w)return;w.exercises.push({id:uid(),name:name,mainLift:null,secondaryDay:false,sets:[{w:"",r:"",done:false},{w:"",r:"",done:false},{w:"",r:"",done:false}]});sv();renderLog()}
 function woDelete(){if(!confirm("Slett denne økta?"))return;workouts=workouts.filter(function(x){return x.id!==curWo});curWo=null;sv();renderLog()}
+function woRenameEx(ei,v){var w=findWo();if(!w||!w.exercises[ei])return;v=(v||"").trim();if(!v){renderLog();return}w.exercises[ei].name=v;sv();renderLog()}
+function woFinish(){var w=findWo();if(!w)return;w.exercises.forEach(function(ex){ex.sets.forEach(function(s){if((s.w!=null&&s.w!=="")||(s.r!=null&&s.r!==""))s.done=true})});sv();backToList()}
 
 function renderLog(){
   var root=document.getElementById("logRoot");if(!root)return;
@@ -592,14 +598,16 @@ function renderWoEditor(root){
         '<input class="log-in" type="text" inputmode="numeric" placeholder="'+escapeHtml(placeR)+'" value="'+escapeHtml(s.r||"")+'" onchange="slgW('+ei+','+si+',\'r\',this.value)">'+
         '<div class="log-chk '+(s.done?"done":"")+'" data-pw="'+escapeHtml(pw)+'" data-pr="'+escapeHtml(pr)+'" onclick="tglW('+ei+','+si+',this)">&#10003;</div>'+'<button class="log-set-del" title="Fjern sett" onclick="woDelSet('+ei+','+si+')">&times;</button></div>';
     });
-    body+='<div class="log-ex fade-in"><div class="log-ex-head">'+(m?'<span style="color:var(--accent)">&#9670;</span>':"")+escapeHtml(ex.name)+
-      '<span style="color:var(--text-dim);font-size:11px;margin-left:auto">'+ex.sets.length+' sett</span>'+
+    body+='<div class="log-ex fade-in"><div class="log-ex-head">'+(m?'<span style="color:var(--accent)">&#9670;</span>':"")+
+      '<input class="log-ex-name" list="exNames" value="'+escapeHtml(ex.name)+'" placeholder="Øvelse..." onchange="woRenameEx('+ei+',this.value)">'+
+      '<span style="color:var(--text-dim);font-size:11px;flex-shrink:0">'+ex.sets.length+' sett</span>'+
       '<button class="log-edit" title="Legg til sett" onclick="woAddSet('+ei+')">+</button>'+
       '<button class="log-edit" title="Fjern øvelse" onclick="woDelEx('+ei+')">&times;</button></div>'+lastLine+rows+'</div>';
   });
   var addEx='<div class="wo-add-ex"><input class="wo-add-in" list="exNames" placeholder="+ Legg til øvelse..." onchange="woAddEx(this.value);this.value=\'\'"></div>';
-  var del='<div style="padding:16px 12px 24px"><button class="data-btn danger" style="width:100%;justify-content:center" onclick="woDelete()">Slett denne økten</button></div>';
-  root.innerHTML=head+body+addEx+del;
+  var finish='<div style="padding:16px 12px 0"><button class="wo-finish" onclick="woFinish()">&#10003; Fullf&oslash;r &oslash;kt</button></div>';
+  var del='<div style="padding:12px 12px 24px"><button class="data-btn danger" style="width:100%;justify-content:center" onclick="woDelete()">Slett denne økten</button></div>';
+  root.innerHTML=head+body+addEx+finish+del;
 }
 function closeModal(){document.getElementById("modalOv").classList.remove("open")}
 
