@@ -161,6 +161,19 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .log-in::placeholder{color:var(--text-dim);opacity:0.4}
 .log-chk{width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .log-chk.done{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.log-last{padding:9px 16px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);border-bottom:1px solid rgba(42,42,58,0.3);cursor:pointer;display:flex;gap:6px;align-items:baseline}
+.log-last:active{background:var(--surface2)}
+.log-last .ll-date{color:var(--accent);flex-shrink:0}
+.log-last .ll-sets{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-item{padding:12px 14px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);margin-top:6px}
+.hist-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.hist-date{font-family:'Space Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:1px}
+.hist-sets{font-family:'Space Mono',monospace;font-size:13px;color:var(--text)}
+.wo-card-static{cursor:default}
+.wo-card-static:active{background:var(--surface)}
+.wh-ex{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:3px 0;font-family:'Space Mono',monospace;font-size:12px}
+.wh-ex-name{color:var(--text)}
+.wh-ex-sets{color:var(--text-dim);text-align:right;min-width:0;overflow-wrap:anywhere}
 .log-hero{padding:20px 16px 8px;text-align:center}
 .log-hero h2{font-family:'Space Mono',monospace;font-size:22px;font-weight:700;color:var(--accent)}
 .log-hero p{font-size:12px;color:var(--text-dim);margin-top:4px;font-family:'Space Mono',monospace}
@@ -177,7 +190,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .wo-tag{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;background:rgba(201,240,107,0.12);color:var(--accent);padding:3px 8px;border-radius:10px;border:1px solid rgba(201,240,107,0.25)}
 .wo-tag.wo-tag-none{background:var(--surface2);color:var(--text-dim);border-color:var(--border)}
 .wo-name{font-size:15px;font-weight:600;margin-bottom:4px}
-.wo-meta{font-size:12px;color:var(--text-dim);font-family:'Space Mono',monospace}
+.wo-meta{font-size:12px;color:var(--text-dim);font-family:'Space Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wo-empty{margin:8px 0;padding:28px 16px;text-align:center;color:var(--text-dim);font-size:13px;background:var(--surface);border:1px dashed var(--border);border-radius:14px;line-height:1.5}
 .wo-edit-head{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 6px}
 .wo-back{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:10px;font-size:13px;cursor:pointer;font-family:'Outfit',sans-serif}
@@ -365,14 +378,78 @@ function sxml(di,ei,val){var ex=sd[di].exercises[ei];if(!val){ex.mainLift=null;e
 function applySetup(){sd.forEach(function(d){d.exercises=d.exercises.filter(function(e){return e.name&&e.name.trim()});d.exercises.forEach(function(e){if(!e.id)e.id=uid();if(typeof e.workingWeight==="undefined")e.workingWeight=""});if(!d.id)d.id=uid()});sess=JSON.parse(JSON.stringify(sd));sess.forEach(function(s,i){s.day=i+1});propagateFromCurrent();sv();renderProg();switchV("vLog",document.querySelector(".bnav-item"));alert("Program lagret! (gjelder uke "+wk+" og fremover)")}
 function resetSetup(){if(confirm("Tilbakestill?")){sd=JSON.parse(JSON.stringify(DS));renderSetup()}}
 
-var logFilter="all";
+var logFilter="all",woHist=false;
 function todayISO(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
 function findWo(){if(!curWo)return null;for(var i=0;i<workouts.length;i++)if(workouts[i].id===curWo)return workouts[i];return null}
 function allExerciseNames(){var s={};sess.forEach(function(d){d.exercises.forEach(function(e){if(e.name)s[e.name]=true})});workouts.forEach(function(w){w.exercises.forEach(function(e){if(e.name)s[e.name]=true})});return Object.keys(s).sort()}
 function updateExNames(){var dl=document.getElementById("exNames");if(!dl)return;dl.innerHTML=allExerciseNames().map(function(n){return'<option value="'+escapeHtml(n)+'">'}).join("")}
+function filledSets(ex){return(ex.sets||[]).filter(function(s){return(s.w!=null&&s.w!=="")||(s.r!=null&&s.r!=="")})}
+function fmtSets(sets){return sets.map(function(s){return(s.w!==""&&s.w!=null?s.w:"–")+"×"+(s.r!==""&&s.r!=null?s.r:"–")}).join(", ")}
+function topSet(sets){var best=null,bw=-1;sets.forEach(function(s){var w=parseFloat(s.w);if(isNaN(w))w=0;if(w>bw){bw=w;best=s}});return best}
+function exHistory(name,excludeId){
+  var n=(name||"").trim().toLowerCase();if(!n)return[];
+  var out=[];
+  workouts.slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0}).forEach(function(wo){
+    if(excludeId&&wo.id===excludeId)return;
+    wo.exercises.forEach(function(ex){
+      if((ex.name||"").trim().toLowerCase()!==n)return;
+      var sets=filledSets(ex);
+      if(sets.length)out.push({date:wo.date,week:wo.week,sets:sets});
+    });
+  });
+  return out;
+}
+function lastPerformance(name,excludeId){var h=exHistory(name,excludeId);return h.length?h[0]:null}
+function showExHistoryEd(ei){var w=findWo();if(!w||!w.exercises[ei])return;showExHistory(w.exercises[ei].name)}
+function showExHistory(name){
+  var hist=exHistory(name,curWo);
+  var modalBody=document.getElementById("modalBody");
+  modalBody.textContent="";
+  var title=document.createElement("div");
+  title.className="modal-title";
+  title.appendChild(document.createTextNode(name));
+  var closeBtn=document.createElement("button");
+  closeBtn.className="modal-close";
+  closeBtn.type="button";
+  closeBtn.innerHTML="&times;";
+  closeBtn.addEventListener("click",closeModal);
+  title.appendChild(closeBtn);
+  modalBody.appendChild(title);
+  if(!hist.length){
+    var empty=document.createElement("div");
+    empty.className="setup-hint";
+    empty.style.textAlign="left";
+    empty.textContent="Ingen tidligere logg for denne øvelsen.";
+    modalBody.appendChild(empty);
+  }else hist.forEach(function(h){
+    var item=document.createElement("div");
+    item.className="hist-item";
+    var row=document.createElement("div");
+    row.className="hist-row";
+    var date=document.createElement("div");
+    date.className="hist-date";
+    date.textContent=h.date;
+    row.appendChild(date);
+    if(h.week!=null){
+      var tag=document.createElement("span");
+      tag.className="wo-tag";
+      tag.textContent="Uke "+h.week;
+      row.appendChild(tag);
+    }
+    item.appendChild(row);
+    var sets=document.createElement("div");
+    sets.className="hist-sets";
+    sets.textContent=fmtSets(h.sets);
+    item.appendChild(sets);
+    modalBody.appendChild(item);
+  });
+  document.getElementById("modalOv").classList.add("open");
+}
 function setLogFilter(v){logFilter=(v==="all"||v==="none")?v:+v;renderLog()}
-function openWo(id){curWo=id;renderLog()}
-function backToList(){curWo=null;renderLog()}
+function openWo(id){curWo=id;woHist=false;renderLog()}
+function backToList(){curWo=null;woHist=false;renderLog()}
+function openWoHist(){woHist=true;renderLog()}
+function closeWoHist(){woHist=false;renderLog()}
 function newWorkout(){
   var modalBody=document.getElementById("modalBody");
   modalBody.textContent="";
@@ -454,7 +531,7 @@ function woDelete(){if(!confirm("Slett denne økta?"))return;workouts=workouts.f
 function renderLog(){
   var root=document.getElementById("logRoot");if(!root)return;
   updateExNames();
-  if(curWo){renderWoEditor(root);return}
+  if(curWo){if(woHist){renderWoHist(root);return}renderWoEditor(root);return}
   var opts='<option value="all"'+(logFilter==="all"?" selected":"")+'>Alle uker</option><option value="none"'+(logFilter==="none"?" selected":"")+'>Uten uke</option>';
   for(var w=1;w<=wkCount();w++)opts+='<option value="'+w+'"'+(logFilter===w?" selected":"")+'>Uke '+w+'</option>';
   var filtered=workouts.filter(function(x){if(logFilter==="all")return true;if(logFilter==="none")return x.week==null;return x.week===logFilter}).slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0});
@@ -463,20 +540,51 @@ function renderLog(){
   else filtered.forEach(function(x){
     var total=0,done=0;x.exercises.forEach(function(e){e.sets.forEach(function(s){total++;if(s.done)done++})});
     var tag=x.week!=null?'<span class="wo-tag">Uke '+x.week+'</span>':'<span class="wo-tag wo-tag-none">Uten uke</span>';
-    list+='<div class="wo-card" onclick="openWo(\''+x.id+'\')"><div class="wo-row"><div class="wo-date">'+escapeHtml(x.date)+'</div>'+tag+'</div><div class="wo-name">'+escapeHtml(x.name||"Økt")+'</div><div class="wo-meta">'+x.exercises.length+' øvelser • '+done+'/'+total+' sett</div></div>';
+    var lifts=[];
+    x.exercises.slice().sort(function(a,b){return(b.mainLift?1:0)-(a.mainLift?1:0)}).forEach(function(e){
+      if(lifts.length>=3)return;
+      var ts=topSet(filledSets(e));
+      if(ts&&ts.w)lifts.push(e.name+" "+ts.w+"×"+(ts.r||"–"));
+    });
+    var liftStr=lifts.length?" • "+lifts.join(" • "):"";
+    list+='<div class="wo-card" onclick="openWo(\''+x.id+'\')"><div class="wo-row"><div class="wo-date">'+escapeHtml(x.date)+'</div>'+tag+'</div><div class="wo-name">'+escapeHtml(x.name||"Økt")+'</div><div class="wo-meta">'+x.exercises.length+' øvelser • '+done+'/'+total+' sett'+escapeHtml(liftStr)+'</div></div>';
   });
   root.innerHTML='<div class="log-hero"><h2>Logg</h2><p>'+workouts.length+' loggede økter</p></div><div class="log-filter-row"><select class="log-filter" onchange="setLogFilter(this.value)">'+opts+'</select><button class="logg-new" onclick="newWorkout()">+ Logg ny økt</button></div><div class="wo-list">'+list+'</div>';
+}
+function woTypeKey(w){return(w.templateName||w.name||"").trim().toLowerCase()}
+function renderWoHist(root){
+  var wo=findWo();if(!wo){curWo=null;woHist=false;renderLog();return}
+  var key=woTypeKey(wo),typeName=wo.templateName||wo.name||"Økt";
+  var hist=key?workouts.filter(function(x){return x.id!==wo.id&&woTypeKey(x)===key}).slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0}):[];
+  var head='<div class="wo-edit-head"><button class="wo-back" onclick="closeWoHist()">&lsaquo; Tilbake til økta</button></div>'+
+    '<div class="log-hero" style="padding-top:6px"><h2 style="font-size:18px">'+escapeHtml(typeName)+'</h2><p>'+hist.length+' tidligere '+(hist.length===1?"økt":"økter")+' av denne typen</p></div>';
+  var list="";
+  if(!hist.length)list='<div class="wo-empty">Ingen tidligere økter av denne typen.</div>';
+  else hist.forEach(function(x){
+    var exRows="";
+    x.exercises.forEach(function(e){
+      var sets=filledSets(e);if(!sets.length)return;
+      exRows+='<div class="wh-ex"><div class="wh-ex-name">'+(e.mainLift?'<span style="color:var(--accent)">&#9670; </span>':"")+escapeHtml(e.name)+'</div><div class="wh-ex-sets">'+escapeHtml(fmtSets(sets))+'</div></div>';
+    });
+    if(!exRows)exRows='<div class="wh-ex"><div class="wh-ex-name" style="color:var(--text-dim)">Ingen utfylte sett</div></div>';
+    var tag=x.week!=null?'<span class="wo-tag">Uke '+x.week+'</span>':'<span class="wo-tag wo-tag-none">Uten uke</span>';
+    list+='<div class="wo-card wo-card-static"><div class="wo-row"><div class="wo-date">'+escapeHtml(x.date)+'</div>'+tag+'</div><div class="wo-name">'+escapeHtml(x.name||"Økt")+'</div>'+exRows+'</div>';
+  });
+  root.innerHTML=head+'<div class="wo-list">'+list+'</div>';
 }
 function renderWoEditor(root){
   var wo=findWo();if(!wo){curWo=null;renderLog();return}
   var weekOpts='<option value="">— uten uke —</option>';
   for(var w=1;w<=wkCount();w++)weekOpts+='<option value="'+w+'"'+(wo.week===w?" selected":"")+'>Uke '+w+'</option>';
-  var head='<div class="wo-edit-head"><button class="wo-back" onclick="backToList()">&lsaquo; Tilbake</button><div class="wo-head-date">'+escapeHtml(wo.date)+'</div></div>'+
+  var head='<div class="wo-edit-head"><button class="wo-back" onclick="backToList()">&lsaquo; Tilbake</button><div class="wo-head-date">'+escapeHtml(wo.date)+'</div><button class="wo-back" onclick="openWoHist()">Historikk</button></div>'+
     '<div class="wo-name-row"><input class="wo-name-in" value="'+escapeHtml(wo.name||"")+'" onchange="woRename(this.value)" placeholder="Navn på økt"><select class="wo-week-sel" onchange="woSetWeek(this.value)">'+weekOpts+'</select></div>';
   var body="";
   wo.exercises.forEach(function(ex,ei){
     var m=!!ex.mainLift,placeW="kg",placeR="reps",pw="",pr="";
+    var last=lastPerformance(ex.name,wo.id);
     if(m&&wo.week!=null){var p=mrx(wo.week,ex.mainLift,ex.secondaryDay);placeW=p.weight+" kg";placeR=p.reps+" reps";pw=""+p.weight;var rm=(""+p.reps).match(/\d+/);pr=rm?rm[0]:""}
+    else if(last){var ts=topSet(last.sets);if(ts){if(ts.w){placeW=ts.w+" kg";pw=""+ts.w}if(ts.r){placeR=ts.r+" reps";pr=""+ts.r}}}
+    var lastLine=last?'<div class="log-last" onclick="showExHistoryEd('+ei+')" title="Vis historikk"><span class="ll-date">Sist '+escapeHtml(last.date)+':</span><span class="ll-sets">'+escapeHtml(fmtSets(last.sets))+'</span></div>':"";
     var rows="";
     ex.sets.forEach(function(s,si){
       rows+='<div class="log-set"><div class="log-sn">S'+(si+1)+'</div>'+
@@ -487,7 +595,7 @@ function renderWoEditor(root){
     body+='<div class="log-ex fade-in"><div class="log-ex-head">'+(m?'<span style="color:var(--accent)">&#9670;</span>':"")+escapeHtml(ex.name)+
       '<span style="color:var(--text-dim);font-size:11px;margin-left:auto">'+ex.sets.length+' sett</span>'+
       '<button class="log-edit" title="Legg til sett" onclick="woAddSet('+ei+')">+</button>'+
-      '<button class="log-edit" title="Fjern øvelse" onclick="woDelEx('+ei+')">&times;</button></div>'+rows+'</div>';
+      '<button class="log-edit" title="Fjern øvelse" onclick="woDelEx('+ei+')">&times;</button></div>'+lastLine+rows+'</div>';
   });
   var addEx='<div class="wo-add-ex"><input class="wo-add-in" list="exNames" placeholder="+ Legg til øvelse..." onchange="woAddEx(this.value);this.value=\'\'"></div>';
   var del='<div style="padding:16px 12px 24px"><button class="data-btn danger" style="width:100%;justify-content:center" onclick="woDelete()">Slett denne økten</button></div>';
@@ -613,15 +721,29 @@ function chartSummary(series){
     '<div class="chart-stat"><div class="csv'+(delta<0?" neg":"")+'">'+sign+Math.round(delta)+'</div><div class="csl">Endring</div></div>'+
   '</div>';
 }
+function chartHistList(name){
+  var h=exHistory(name,null);
+  if(!h.length)return'<div class="chart-empty" style="margin-top:0">Ingen daterte &oslash;kter med denne &oslash;velsen enda.</div>';
+  var rows=h.map(function(x){
+    var tag=x.week!=null?'<span class="wo-tag">Uke '+x.week+'</span>':"";
+    return'<div class="hist-item"><div class="hist-row"><div class="hist-date">'+escapeHtml(x.date)+'</div>'+tag+'</div><div class="hist-sets">'+escapeHtml(fmtSets(x.sets))+'</div></div>';
+  }).join("");
+  return'<div class="chart-card fade-in" style="margin-top:0"><div class="settings-title" style="margin-bottom:2px">&Oslash;kt-historikk</div>'+rows+'</div>';
+}
 function renderCharts(){
   var area=document.getElementById("chartArea");if(!area)return;
-  var hist=exerciseHistory(),names=Object.keys(hist).sort();
+  var hist=exerciseHistory();
+  var seen={},names=[];
+  Object.keys(hist).forEach(function(n){var k=n.toLowerCase();if(!seen[k]){seen[k]=true;names.push(n)}});
+  workouts.forEach(function(wo){wo.exercises.forEach(function(e){var n=(e.name||"").trim();if(!n||!filledSets(e).length)return;var k=n.toLowerCase();if(!seen[k]){seen[k]=true;names.push(n)}})});
+  names.sort();
   if(!names.length){area.innerHTML='<div class="chart-empty">Logg noen &oslash;kter i Logg-fanen for &aring; se framgangen din her.</div>';return}
   if(!chartEx||names.indexOf(chartEx)<0)chartEx=names[0];
   var sel='<select class="chart-sel" onchange="chartEx=this.value;renderCharts()">'+names.map(function(n){return'<option value="'+escapeHtml(n)+'"'+(n===chartEx?" selected":"")+">"+escapeHtml(n)+"</option>"}).join("")+"</select>";
   var tog='<div class="chart-metrics">'+METRICS.map(function(m){return'<button class="chart-mbtn'+(m.k===chartMetric?" active":"")+'" onclick="chartMetric=\''+m.k+'\';renderCharts()">'+m.l+"</button>"}).join("")+"</div>";
-  var series=hist[chartEx].map(function(p){return{week:p.week,value:p[chartMetric]}});
-  area.innerHTML='<div class="chart-card fade-in">'+sel+tog+lineChart(series)+chartSummary(series)+"</div>";
+  var series=(hist[chartEx]||[]).map(function(p){return{week:p.week,value:p[chartMetric]}});
+  var chart=series.length?lineChart(series)+chartSummary(series):'<div class="setup-hint" style="padding:8px 0">Grafen viser kun &oslash;kter som er tagget med uke.</div>';
+  area.innerHTML='<div class="chart-card fade-in">'+sel+tog+chart+"</div>"+chartHistList(chartEx);
 }
 function chgWeek(d){wk=Math.max(1,Math.min(wkCount(),wk+d));var lbl=document.getElementById("curWkLabel");if(lbl)lbl.textContent=wk;sv();renderProg();renderLog();renderProgression();renderCharts()}
 function updPR(){prs.Squat=+(document.getElementById("prSq").value)||100;prs.Bench=+(document.getElementById("prBn").value)||100;prs.Deadlift=+(document.getElementById("prDl").value)||100;sv();document.getElementById("sSq").textContent=prs.Squat;document.getElementById("sBn").textContent=prs.Bench;document.getElementById("sDl").textContent=prs.Deadlift;document.getElementById("totalDisp").textContent=prs.Squat+prs.Bench+prs.Deadlift;renderProg();renderLog();renderProgression()}
