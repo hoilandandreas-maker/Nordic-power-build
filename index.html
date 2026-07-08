@@ -681,39 +681,46 @@ function exerciseHistory(){
       });
     });
   }
-  // Date-based workouts: contribute to their tagged cycle week
-  workouts.forEach(function(wo){
-    if(wo.week==null)return;
-    wo.exercises.forEach(function(ex){
-      var name=(ex.name||"").trim();if(!name)return;
-      var e1=0,top=0,vol=0,hit=false;
-      ex.sets.forEach(function(st){
-        var wt=parseFloat(st.w),rp=parseInt(st.r,10);
-        if(!(wt>0)||!(rp>0))return;
-        hit=true;var e=epley(wt,rp);
-        if(e>e1)e1=e;if(wt>top)top=wt;vol+=wt*rp;
-      });
-      if(hit)add(name,wo.week,e1,top,vol);
-    });
-  });
   var out={};
   Object.keys(byName).forEach(function(n){
     out[n]=Object.keys(byName[n]).map(function(k){return byName[n][k]}).sort(function(a,b){return a.week-b.week});
   });
   return out;
 }
-function lineChart(series){
-  if(!series.length)return"";
+// Per-date history for one exercise across all dated workouts (tagged or not).
+function dateHistoryFor(name){
+  var n=(name||"").trim().toLowerCase();if(!n)return[];
+  var byDate={};
+  workouts.forEach(function(wo){
+    if(!wo.date)return;
+    wo.exercises.forEach(function(ex){
+      if((ex.name||"").trim().toLowerCase()!==n)return;
+      var e1=0,top=0,vol=0,hit=false;
+      (ex.sets||[]).forEach(function(st){
+        var wt=parseFloat(st.w),rp=parseInt(st.r,10);
+        if(!(wt>0)||!(rp>0))return;
+        hit=true;var e=epley(wt,rp);
+        if(e>e1)e1=e;if(wt>top)top=wt;vol+=wt*rp;
+      });
+      if(!hit)return;
+      var cur=byDate[wo.date];
+      if(!cur)byDate[wo.date]={date:wo.date,e1rm:e1,top:top,vol:vol};
+      else{cur.e1rm=Math.max(cur.e1rm,e1);cur.top=Math.max(cur.top,top);cur.vol+=vol}
+    });
+  });
+  return Object.keys(byDate).sort().map(function(k){return byDate[k]});
+}
+function chartDateLabel(d){var m=/^\d{4}-(\d{2})-(\d{2})/.exec(d||"");return m?m[2]+"."+m[1]:String(d)}
+function lineChart(pts){
+  if(!pts.length)return"";
   var W=320,H=170,pl=34,pr=12,pt=14,pb=24;
-  var vs=series.map(function(p){return p.value});
+  var vs=pts.map(function(p){return p.value});
   var minV=Math.min.apply(null,vs),maxV=Math.max.apply(null,vs);
   if(minV===maxV){minV=Math.max(0,minV-1);maxV=maxV+1}
   var pad=(maxV-minV)*0.12;minV=Math.max(0,minV-pad);maxV=maxV+pad;
   var rng=maxV-minV||1;
-  var maxWeek=series.reduce(function(m,p){return Math.max(m,p.week||1)},1);
-  var axisWeeks=Math.max(wkCount(),maxWeek,1);
-  var weekDenom=Math.max(1,axisWeeks-1);
-  function px(wk){return pl+(wk-1)/weekDenom*(W-pl-pr)}
+  var denom=Math.max(1,pts.length-1);
+  function px(i){return pts.length===1?pl+(W-pl-pr)/2:pl+i/denom*(W-pl-pr)}
   function py(v){return pt+(1-(v-minV)/rng)*(H-pt-pb)}
   var g="",i;
   for(i=0;i<=3;i++){
@@ -721,11 +728,14 @@ function lineChart(series){
     g+='<line x1="'+pl+'" y1="'+gy.toFixed(1)+'" x2="'+(W-pr)+'" y2="'+gy.toFixed(1)+'" stroke="#2a2a3a" stroke-width="1"/>';
     g+='<text x="'+(pl-5)+'" y="'+(gy+3).toFixed(1)+'" fill="#7a7a90" font-size="8" text-anchor="end" font-family="monospace">'+Math.round(gv)+'</text>';
   }
+  // At most ~5 x-labels, always including the most recent point.
+  var step=Math.max(1,Math.ceil(pts.length/5)),show={};
+  for(i=pts.length-1;i>=0;i-=step)show[i]=true;
   var xl="";
-  series.forEach(function(p){xl+='<text x="'+px(p.week).toFixed(1)+'" y="'+(H-8)+'" fill="#7a7a90" font-size="8" text-anchor="middle" font-family="monospace">'+p.week+'</text>'});
-  var d=series.map(function(p,i){return(i?"L":"M")+px(p.week).toFixed(1)+" "+py(p.value).toFixed(1)}).join(" ");
-  var line=series.length>1?'<path d="'+d+'" fill="none" stroke="#c9f06b" stroke-width="2" stroke-linejoin="round"/>':"";
-  var dots=series.map(function(p){return'<circle cx="'+px(p.week).toFixed(1)+'" cy="'+py(p.value).toFixed(1)+'" r="3" fill="#c9f06b"/>'}).join("");
+  pts.forEach(function(p,i){if(show[i])xl+='<text x="'+px(i).toFixed(1)+'" y="'+(H-8)+'" fill="#7a7a90" font-size="8" text-anchor="middle" font-family="monospace">'+escapeHtml(p.label)+'</text>'});
+  var d=pts.map(function(p,i){return(i?"L":"M")+px(i).toFixed(1)+" "+py(p.value).toFixed(1)}).join(" ");
+  var line=pts.length>1?'<path d="'+d+'" fill="none" stroke="#c9f06b" stroke-width="2" stroke-linejoin="round"/>':"";
+  var dots=pts.map(function(p,i){return'<circle cx="'+px(i).toFixed(1)+'" cy="'+py(p.value).toFixed(1)+'" r="3" fill="#c9f06b"/>'}).join("");
   return'<svg class="chart-svg" viewBox="0 0 '+W+' '+H+'">'+g+xl+line+dots+'</svg>';
 }
 function chartSummary(series){
@@ -758,8 +768,10 @@ function renderCharts(){
   if(!chartEx||names.indexOf(chartEx)<0)chartEx=names[0];
   var sel='<select class="chart-sel" onchange="chartEx=this.value;renderCharts()">'+names.map(function(n){return'<option value="'+escapeHtml(n)+'"'+(n===chartEx?" selected":"")+">"+escapeHtml(n)+"</option>"}).join("")+"</select>";
   var tog='<div class="chart-metrics">'+METRICS.map(function(m){return'<button class="chart-mbtn'+(m.k===chartMetric?" active":"")+'" onclick="chartMetric=\''+m.k+'\';renderCharts()">'+m.l+"</button>"}).join("")+"</div>";
-  var series=(hist[chartEx]||[]).map(function(p){return{week:p.week,value:p[chartMetric]}});
-  var chart=series.length?lineChart(series)+chartSummary(series):'<div class="setup-hint" style="padding:8px 0">Grafen viser kun &oslash;kter som er tagget med uke.</div>';
+  var dated=dateHistoryFor(chartEx);
+  var pts=dated.length?dated.map(function(p){return{label:chartDateLabel(p.date),value:p[chartMetric]}})
+    :(hist[chartEx]||[]).map(function(p){return{label:"Uke "+p.week,value:p[chartMetric]}});
+  var chart=pts.length?lineChart(pts)+chartSummary(pts):'<div class="setup-hint" style="padding:8px 0">Logg vekt og reps p&aring; denne &oslash;velsen for &aring; se graf.</div>';
   area.innerHTML='<div class="chart-card fade-in">'+sel+tog+chart+"</div>"+chartHistList(chartEx);
 }
 function chgWeek(d){wk=Math.max(1,Math.min(wkCount(),wk+d));var lbl=document.getElementById("curWkLabel");if(lbl)lbl.textContent=wk;sv();renderProg();renderLog();renderProgression();renderCharts()}
